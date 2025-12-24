@@ -3,6 +3,7 @@ use rerun::external::glam::Vec2;
 use serde::Deserialize;
 use std::io::BufRead;
 use std::{io::BufReader, net::TcpStream, sync::mpsc::Sender};
+use rand::prelude::*;
 
 #[derive(Debug, Deserialize)]
 pub struct RecevData {
@@ -14,6 +15,7 @@ pub struct RecevData {
     del_t: f64,
 }
 
+#[derive(Clone, Debug)]
 pub struct PointVector {
     pub idx: usize,
     pub origin: Vec2,
@@ -32,10 +34,11 @@ impl PointVector {
 
 impl Default for PointVector {
     fn default() -> Self {
+        let mut rng = rand::rng();
         Self {
             idx: 0,
-            origin: Vec2::new(1.0, 1.0),
-            dir: Vec2::new(1.0, 1.0),
+            origin: Vec2::new(rng.random::<f32>(), rng.random::<f32>()),
+            dir: Vec2::new(rng.random::<f32>(), rng.random::<f32>()),
         }
     }
 }
@@ -57,6 +60,9 @@ pub fn handle_connection(stream: TcpStream, sender: Sender<PointVector>, idx: us
         for val in csv_reader.deserialize::<RecevData>() {
             let val = val.unwrap();
             let theta = ((val.del_t * SPEED_SOUND) / val.mic_dis).asin();
+            if theta.is_nan() {
+                continue;
+            }
             let a = PointVector::new(
                 idx,
                 val.h,
@@ -64,7 +70,8 @@ pub fn handle_connection(stream: TcpStream, sender: Sender<PointVector>, idx: us
                 (theta + val.phi).cos(),
                 (theta + val.phi).sin(),
             );
-            sender.send(a).unwrap();
+
+             if let Ok(_) = sender.send(a.clone()){continue;}
         }
     }
 }

@@ -8,7 +8,7 @@ use crate::server::PointVector;
 mod server;
 
 fn main() {
-    let listerner = TcpListener::bind("0.0.0.0:6969").unwrap();
+    let listerner = TcpListener::bind("192.168.9.183:6060").unwrap();
 
     let (mpsc_tx, mpsc_rx) = mpsc::channel::<PointVector>();
 
@@ -17,13 +17,12 @@ fn main() {
         for _ in 0..3 {
             vectors.push(PointVector::default());
         }
-
         let rec = RecordingStreamBuilder::new("rust_vectors_grid")
             .spawn()
             .unwrap();
 
         loop {
-            if let Ok(val) = mpsc_rx.try_recv() {
+            for val in mpsc_rx.try_iter(){
                 match val.idx {
                     0 => {
                         vectors[0] = val;
@@ -37,6 +36,7 @@ fn main() {
                     _ => unreachable!(),
                 }
             }
+
 
             let intersections = vectors
                 .iter()
@@ -74,55 +74,55 @@ fn main() {
                 grid_strips.push(vec![Vec2::new(-b, f), Vec2::new(b, f)]);
             }
 
-            let scale = 20.0;
-            let mut vector_strips = Vec::new();
-            let mut vector_colors = Vec::new();
+            //let scale = 20.0;
+            //let mut vector_strips = Vec::new();
+            //let mut vector_colors = Vec::new();
 
-            for line in &vectors {
-                let d = line.dir.normalize();
-                let start = line.origin - d * scale;
-                let end = line.origin + d * scale;
+            //for line in &vectors {
+            //    let d = line.dir.normalize();
+            //    let start = line.origin - d * scale;
+            //    let end = line.origin + d * scale;
 
-                vector_strips.push(vec![start, end]);
-                vector_colors.push(rerun::Color::from_rgb(12, 23, 40));
-            }
+            //    vector_strips.push(vec![start, end]);
+            //    vector_colors.push(rerun::Color::from_rgb(12, 23, 40));
+            //}
 
-            rec.log(
-                "vectors",
-                &LineStrips2D::new(vector_strips)
-                    .with_colors(vector_colors)
-                    .with_radii([0.05]),
-            )
-            .unwrap();
+            //rec.log(
+            //    "vectors",
+            //    &LineStrips2D::new(vector_strips)
+            //        .with_colors(vector_colors)
+            //        .with_radii([0.05]),
+            //)
+            //.unwrap();
 
-            let mut points = Vec::new();
-            for point in intersections {
-                points.push(Vec2::new(point[0], point[1]));
-            }
+            //let mut points = Vec::new();
+            //for point in intersections {
+            //    points.push(Vec2::new(point[0], point[1]));
+            //}
 
-            rec.log(
-                "intersections",
-                &Points2D::new(points)
-                    .with_colors([rerun::Color::from_rgb(255, 255, 0)]) // Yellow
-                    .with_radii([0.2]),
-            )
-            .unwrap();
+            //rec.log(
+            //    "intersections",
+            //    &Points2D::new(points)
+            //        .with_colors([rerun::Color::from_rgb(255, 255, 0)]) // Yellow
+            //        .with_radii([0.2]),
+            //)
+            //.unwrap();
 
-            rec.log(
-                "centroi",
-                &Points2D::new(vec![Vec2::new(centroid_x, centroid_y)])
-                    .with_colors([rerun::Color::from_rgb(200, 100, 50)])
-                    .with_radii([0.2]),
-            )
-            .unwrap();
+            //rec.log(
+            //    "centroi",
+            //    &Points2D::new(vec![Vec2::new(centroid_x, centroid_y)])
+            //        .with_colors([rerun::Color::from_rgb(200, 100, 50)])
+            //        .with_radii([0.2]),
+            //)
+            //.unwrap();
 
-            rec.log(
-                "grid",
-                &LineStrips2D::new(grid_strips)
-                    .with_colors([rerun::Color::from_rgb(80, 80, 80)])
-                    .with_radii([0.02]),
-            )
-            .unwrap();
+            //rec.log(
+            //    "grid",
+            //    &LineStrips2D::new(grid_strips)
+            //        .with_colors([rerun::Color::from_rgb(80, 80, 80)])
+            //        .with_radii([0.02]),
+            //)
+            //.unwrap();
         }
     });
 
