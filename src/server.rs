@@ -1,4 +1,4 @@
-use csv::Reader;
+use csv::ReaderBuilder;
 use rerun::external::glam::Vec2;
 use serde::Deserialize;
 use std::io::BufRead;
@@ -14,7 +14,6 @@ pub struct RecevData {
     del_t: f64,
 }
 
-#[derive(Default)]
 pub struct PointVector {
     pub idx: usize,
     pub origin: Vec2,
@@ -31,27 +30,41 @@ impl PointVector {
     }
 }
 
+impl Default for PointVector {
+    fn default() -> Self {
+        Self {
+            idx: 0,
+            origin: Vec2::new(1.0, 1.0),
+            dir: Vec2::new(1.0, 1.0),
+        }
+    }
+}
+
 pub fn handle_connection(stream: TcpStream, sender: Sender<PointVector>, idx: usize) {
     let mut buf_reader = BufReader::new(&stream);
 
-    let mut buf = String::new();
+    loop {
+        let mut buf = String::new();
 
-    buf_reader.read_line(&mut buf).unwrap();
+        buf_reader.read_line(&mut buf).unwrap();
 
-    buf = buf.trim().to_string();
+        buf = buf.trim().to_string();
 
-    let mut csv_reader = Reader::from_reader(buf.as_bytes());
+        let mut csv_reader = ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(buf.as_bytes());
 
-    for val in csv_reader.deserialize::<RecevData>() {
-        let val = val.unwrap();
-        let theta = ((val.del_t * SPEED_SOUND) / val.mic_dis).asin();
-        let a = PointVector::new(
-            idx,
-            val.h,
-            val.k,
-            (theta + val.phi).cos(),
-            (theta + val.phi).sin(),
-        );
-        sender.send(a).unwrap();
+        for val in csv_reader.deserialize::<RecevData>() {
+            let val = val.unwrap();
+            let theta = ((val.del_t * SPEED_SOUND) / val.mic_dis).asin();
+            let a = PointVector::new(
+                idx,
+                val.h,
+                val.k,
+                (theta + val.phi).cos(),
+                (theta + val.phi).sin(),
+            );
+            sender.send(a).unwrap();
+        }
     }
 }

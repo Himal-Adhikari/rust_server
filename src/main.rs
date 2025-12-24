@@ -8,18 +8,9 @@ use crate::server::PointVector;
 mod server;
 
 fn main() {
-    let listerner = TcpListener::bind("127.0.0.0:6969").unwrap();
+    let listerner = TcpListener::bind("0.0.0.0:6969").unwrap();
 
-    let (mpsc_tx, mpsc_rx) = mpsc::channel();
-
-    for (idx, stream) in listerner.incoming().enumerate() {
-        let stream = stream.unwrap();
-        let transmitter = mpsc_tx.clone();
-
-        thread::spawn(move || {
-            handle_connection(stream, transmitter, idx);
-        });
-    }
+    let (mpsc_tx, mpsc_rx) = mpsc::channel::<PointVector>();
 
     thread::spawn(move || {
         let mut vectors = Vec::new();
@@ -71,7 +62,7 @@ fn main() {
             let centroid_y =
                 (intersections[0][1] + intersections[1][1] + intersections[2][1]) / 3.0;
 
-            println!("{}, {}", centroid_x, centroid_y);
+            println!("Centroid: {}, {}", centroid_x, centroid_y);
 
             let bounds = 10;
             let mut grid_strips = Vec::new();
@@ -134,4 +125,13 @@ fn main() {
             .unwrap();
         }
     });
+
+    for (idx, stream) in listerner.incoming().enumerate() {
+        let stream = stream.unwrap();
+        let transmitter = mpsc_tx.clone();
+
+        thread::spawn(move || {
+            handle_connection(stream, transmitter, idx);
+        });
+    }
 }
