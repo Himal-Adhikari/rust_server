@@ -1,0 +1,10 @@
+[package]
+name = "rust_server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+csv = "1.4.0"
+itertools = "0.14.0"
+rerun = "0.28.1"
+serde = "1.0.228"
