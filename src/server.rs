@@ -1,4 +1,5 @@
 use csv::Reader;
+use rerun::external::glam::Vec2;
 use serde::Deserialize;
 use std::io::BufRead;
 use std::{io::BufReader, net::TcpStream, sync::mpsc::Sender};
@@ -16,17 +17,17 @@ pub struct RecevData {
 #[derive(Default)]
 pub struct PointVector {
     pub idx: usize,
-    pub h: f64,
-    pub k: f64,
-    pub x1: f64,
-    pub y1: f64,
+    pub origin: Vec2,
+    pub dir: Vec2,
 }
 
 const SPEED_SOUND: f64 = 343.0;
 
 impl PointVector {
     pub fn new(idx: usize, h: f64, k: f64, x1: f64, y1: f64) -> Self {
-        PointVector { idx, h, k, x1, y1 }
+        let origin = Vec2::new(h as f32, k as f32);
+        let dir = Vec2::new(x1 as f32, y1 as f32);
+        PointVector { idx, origin, dir }
     }
 }
 
