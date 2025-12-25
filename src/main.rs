@@ -1,14 +1,14 @@
 use itertools::Itertools;
-use rerun::{LineStrips2D, Points2D, RecordingStreamBuilder, external::glam::Vec2};
+use rerun::{Arrows2D, LineStrips2D, Points2D, RecordingStreamBuilder, external::glam::Vec2, datatypes::{Rgba32}};
 use server::handle_connection;
-use std::{net::TcpListener, sync::mpsc, thread};
+use std::{time::Duration,net::TcpListener, sync::mpsc, thread};
 
 use crate::server::PointVector;
 
 mod server;
 
 fn main() {
-    let listerner = TcpListener::bind("192.168.9.183:6060").unwrap();
+    let listerner = TcpListener::bind("192.168.12.171:6060").unwrap();
 
     let (mpsc_tx, mpsc_rx) = mpsc::channel::<PointVector>();
 
@@ -22,6 +22,8 @@ fn main() {
             .unwrap();
 
         loop {
+
+            thread::sleep(Duration::from_millis(16));
             for val in mpsc_rx.try_iter(){
                 match val.idx {
                     0 => {
@@ -64,65 +66,75 @@ fn main() {
 
             println!("Centroid: {}, {}", centroid_x, centroid_y);
 
-            let bounds = 10;
+            let bounds = 2;
+            
             let mut grid_strips = Vec::new();
-            for i in -bounds..=bounds {
-                let f = i as f32;
-                let b = bounds as f32;
 
-                grid_strips.push(vec![Vec2::new(f, -b), Vec2::new(f, b)]);
-                grid_strips.push(vec![Vec2::new(-b, f), Vec2::new(b, f)]);
+            for i in -1..=2{
+                   grid_strips.push(vec![Vec2::new(i as f32,0.0),Vec2::new(i as f32,2.0)]);
             }
 
-            //let scale = 20.0;
-            //let mut vector_strips = Vec::new();
-            //let mut vector_colors = Vec::new();
+            for i in 0..=2{
+                   grid_strips.push(vec![Vec2::new(-1.0,i as f32),Vec2::new(2.0,i as f32)]);
+            }
 
-            //for line in &vectors {
-            //    let d = line.dir.normalize();
-            //    let start = line.origin - d * scale;
-            //    let end = line.origin + d * scale;
+            let scale = 4.0;
+            let mut vector_strips = Vec::new();
+            let mut vector_colors = Vec::new();
 
-            //    vector_strips.push(vec![start, end]);
-            //    vector_colors.push(rerun::Color::from_rgb(12, 23, 40));
-            //}
+            for line in &vectors {
+                let d = line.dir.normalize_or_zero();
+                let start = line.origin - d * scale;
+                let end = line.origin + d * scale;
 
-            //rec.log(
-            //    "vectors",
-            //    &LineStrips2D::new(vector_strips)
-            //        .with_colors(vector_colors)
-            //        .with_radii([0.05]),
-            //)
-            //.unwrap();
+                vector_strips.push(vec![start, end]);
+                vector_colors.push(rerun::Color::from_rgb(0,0,255));
+            }
 
-            //let mut points = Vec::new();
-            //for point in intersections {
-            //    points.push(Vec2::new(point[0], point[1]));
-            //}
+            rec.log(
+                "grid",
+                &LineStrips2D::new(grid_strips)
+                    .with_colors([rerun::external::ecolor::Color32::from_rgba_unmultiplied(80, 80, 80, 50)])
+                    .with_radii([0.02]),
+            )
+            .unwrap();
 
-            //rec.log(
-            //    "intersections",
-            //    &Points2D::new(points)
-            //        .with_colors([rerun::Color::from_rgb(255, 255, 0)]) // Yellow
-            //        .with_radii([0.2]),
-            //)
-            //.unwrap();
+            rec.log(
+                "vectors",
+                &LineStrips2D::new(vector_strips)
+                    .with_colors(vector_colors)
+                    .with_radii([0.01]),
+            )
+            .unwrap();
 
-            //rec.log(
-            //    "centroi",
-            //    &Points2D::new(vec![Vec2::new(centroid_x, centroid_y)])
-            //        .with_colors([rerun::Color::from_rgb(200, 100, 50)])
-            //        .with_radii([0.2]),
-            //)
-            //.unwrap();
+            let mut points = Vec::new();
+            for point in intersections {
+                points.push(Vec2::new(point[0], point[1]));
+            }
 
-            //rec.log(
-            //    "grid",
-            //    &LineStrips2D::new(grid_strips)
-            //        .with_colors([rerun::Color::from_rgb(80, 80, 80)])
-            //        .with_radii([0.02]),
-            //)
-            //.unwrap();
+            rec.log(
+                "intersections",
+                &Points2D::new(points)
+                    .with_colors([rerun::Color::from_rgb(255, 255, 0)]) // Yellow
+                    .with_radii([0.05]),
+            )
+            .unwrap();
+
+            rec.log(
+                "centroi",
+                &Points2D::new(vec![Vec2::new(centroid_x, centroid_y)])
+                    .with_colors([rerun::Color::from_rgb(200, 100, 50)])
+                    .with_radii([0.05]),
+            )
+            .unwrap();
+
+            rec.log(
+                "origin",
+                &Points2D::new(vec![Vec2::new(0.0, 0.0)])
+                    .with_colors([rerun::Color::from_rgb(255,255,255)])
+                    .with_radii([0.05]),
+                ).unwrap();
+
         }
     });
 
